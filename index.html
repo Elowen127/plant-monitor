@@ -3,145 +3,134 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PlantCare | 成長日記</title>
+    <title>PlantCare | 你的植物小夥伴</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #f0f4f0; }
         .plant-float { animation: floating 3s ease-in-out infinite; }
-        @keyframes floating { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-10px); } }
+        @keyframes floating {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
     </style>
 </head>
 <body class="pb-20">
 
     <nav class="bg-white p-4 shadow-sm sticky top-0 z-50">
         <div class="max-w-md mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-bold text-green-600">🌿 植物小夥伴</h1>
-            <button onclick="clearHistory()" class="text-xs text-red-400">清除紀錄</button>
+            <h1 class="text-xl font-bold text-green-600">🌿 小森夥伴</h1>
+            <div class="text-sm bg-green-100 text-green-700 px-3 py-1 rounded-full">連線中</div>
         </div>
     </nav>
 
     <main class="max-w-md mx-auto p-4 space-y-6">
         
         <section class="bg-white rounded-3xl p-6 shadow-md text-center">
-            <div id="plant-display" class="text-8xl mb-4 plant-float">🌵</div>
-            <h2 id="plant-name" class="text-2xl font-bold text-gray-800">小仙仙</h2>
-            <p id="status-text" class="text-blue-500 font-medium mt-2">狀態：檢查中...</p>
+            <div class="relative inline-block">
+                <div id="plant-status-img" class="text-8xl mb-4 plant-float">🌵</div>
+                <div id="status-bubble" class="absolute -top-4 -right-8 bg-yellow-400 text-white text-xs px-3 py-1 rounded-full shadow-lg">
+                    我有點渴...
+                </div>
+            </div>
+            <h2 class="text-2xl font-bold text-gray-800">小仙仙</h2>
+            <p class="text-gray-500 text-sm">仙人掌 · 來到家裡第 12 天</p>
         </section>
 
         <section class="grid grid-cols-3 gap-4">
             <div class="bg-white p-4 rounded-2xl shadow-sm text-center">
                 <span class="block text-gray-400 text-xs mb-1">溫度</span>
-                <span id="curr-temp" class="text-lg font-bold text-orange-500">--°C</span>
+                <span class="text-lg font-bold text-orange-500">26°C</span>
             </div>
-            <div class="bg-white p-4 rounded-2xl shadow-sm text-center">
+            <div class="bg-white p-4 rounded-2xl shadow-sm text-center border-2 border-blue-200">
                 <span class="block text-gray-400 text-xs mb-1">濕度</span>
-                <span id="curr-humi" class="text-lg font-bold text-blue-500">--%</span>
+                <span class="text-lg font-bold text-blue-500">38%</span>
             </div>
             <div class="bg-white p-4 rounded-2xl shadow-sm text-center">
-                <span class="block text-gray-400 text-xs mb-1">紀錄數</span>
-                <span id="record-count" class="text-lg font-bold text-green-500">0</span>
+                <span class="block text-gray-400 text-xs mb-1">日照</span>
+                <span class="text-lg font-bold text-yellow-500">適中</span>
             </div>
         </section>
 
         <section class="bg-white rounded-3xl p-6 shadow-md">
-            <h3 class="font-bold text-gray-700 mb-4 text-sm">歷史溫濕度趨勢</h3>
+            <h3 class="font-bold text-gray-700 mb-4 flex justify-between items-center">
+                最近 24 小時數據
+                <span class="text-xs font-normal text-gray-400">滑動查看紀錄</span>
+            </h3>
             <canvas id="historyChart" height="200"></canvas>
         </section>
 
-        <div class="space-y-3">
-            <button onclick="simulateSensor()" class="w-full bg-green-500 text-white py-3 rounded-2xl font-bold shadow-lg">
-                模擬感測器上傳資料
+        <section id="bedtime-box" class="bg-indigo-900 text-white rounded-3xl p-6 shadow-xl hidden">
+            <h3 class="text-lg font-bold mb-2 flex items-center">🌙 晚安對話</h3>
+            <p id="bedtime-msg" class="text-indigo-100 text-sm leading-relaxed mb-4">
+                「主人，今天下午謝謝你帶我曬太陽，我覺得葉子都暖暖的。現在該休息了，晚安！」
+            </p>
+            <button onclick="closeDay()" class="w-full bg-indigo-500 hover:bg-indigo-400 text-white py-2 rounded-xl transition">
+                幫植物關燈
             </button>
-            <p class="text-center text-gray-400 text-xs text-balance">按一下按鈕，就會儲存一筆資料到手機/電腦的記憶體中。</p>
-        </div>
+        </section>
+
+        <button onclick="toggleBedtime()" class="w-full py-2 border-2 border-dashed border-gray-300 rounded-xl text-gray-400 text-xs">
+            (測試用) 模擬進入晚上時段
+        </button>
 
     </main>
 
+    <div class="fixed bottom-0 left-0 right-0 bg-white border-t p-3 flex justify-around items-center max-w-md mx-auto">
+        <button class="text-green-600 flex flex-col items-center">
+            <span class="text-xl">🏠</span>
+            <span class="text-[10px]">家</span>
+        </button>
+        <button class="text-gray-400 flex flex-col items-center">
+            <span class="text-xl">📷</span>
+            <span class="text-[10px]">動態</span>
+        </button>
+        <button class="text-gray-400 flex flex-col items-center">
+            <span class="text-xl">⚙️</span>
+            <span class="text-[10px]">設定</span>
+        </button>
+    </div>
+
     <script>
-        let myChart;
-        
-        // 1. 初始化網頁
-        window.onload = function() {
-            initChart();
-            loadHistory();
-        };
-
-        // 2. 初始化圖表
-        function initChart() {
-            const ctx = document.getElementById('historyChart').getContext('2d');
-            myChart = new Chart(ctx, {
-                type: 'line',
-                data: { labels: [], datasets: [
-                    { label: '濕度', borderColor: '#3b82f6', data: [], tension: 0.4 },
-                    { label: '溫度', borderColor: '#f97316', data: [], tension: 0.4 }
-                ]},
-                options: { responsive: true, plugins: { legend: { display: false } } }
-            });
-        }
-
-        // 3. 模擬感測器動作 (按下按鈕觸發)
-        function simulateSensor() {
-            const temp = Math.floor(Math.random() * (32 - 20 + 1)) + 20; // 20-32度
-            const humi = Math.floor(Math.random() * (80 - 30 + 1)) + 30; // 30-80%
-            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-            saveData(time, temp, humi);
-        }
-
-        // 4. 儲存資料到 LocalStorage
-        function saveData(time, temp, humi) {
-            let history = JSON.parse(localStorage.getItem('plantHistory')) || [];
-            
-            const newRecord = { time, temp, humi };
-            history.push(newRecord);
-
-            // 只保留最近 15 筆，避免手機跑不動
-            if (history.length > 15) history.shift();
-
-            localStorage.setItem('plantHistory', JSON.stringify(history));
-            loadHistory(); // 重新渲染畫面
-        }
-
-        // 5. 讀取並顯示資料
-        function loadHistory() {
-            let history = JSON.parse(localStorage.getItem('plantHistory')) || [];
-            
-            // 更新即時數字顯示
-            if (history.length > 0) {
-                const last = history[history.length - 1];
-                document.getElementById('curr-temp').innerText = last.temp + '°C';
-                document.getElementById('curr-humi').innerText = last.humi + '%';
-                document.getElementById('record-count').innerText = history.length;
-                
-                // 判斷植物狀態
-                const statusEl = document.getElementById('status-text');
-                const plantEl = document.getElementById('plant-display');
-                if (last.humi < 40) {
-                    statusEl.innerText = "狀態：我快渴死了！💧";
-                    statusEl.className = "text-red-500 font-bold mt-2";
-                    plantEl.innerText = "🥀";
-                } else {
-                    statusEl.innerText = "狀態：我很舒服，謝謝主人 ✨";
-                    statusEl.className = "text-green-500 font-medium mt-2";
-                    plantEl.innerText = "🌵";
-                }
+        // 1. 初始化圖表
+        const ctx = document.getElementById('historyChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['12:00', '15:00', '18:00', '21:00', '00:00', '03:00'],
+                datasets: [{
+                    label: '濕度 (%)',
+                    data: [55, 50, 45, 40, 38, 38],
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }, {
+                    label: '溫度 (°C)',
+                    data: [28, 29, 27, 26, 25, 24],
+                    borderColor: '#f97316',
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: false } }
             }
+        });
 
-            // 更新圖表
-            myChart.data.labels = history.map(h => h.time);
-            myChart.data.datasets[0].data = history.map(h => h.humi);
-            myChart.data.datasets[1].data = history.map(h => h.temp);
-            myChart.update();
+        // 2. 睡前互動切換
+        function toggleBedtime() {
+            const box = document.getElementById('bedtime-box');
+            box.classList.toggle('hidden');
         }
 
-        // 6. 清除紀錄功能
-        function clearHistory() {
-            if(confirm('確定要刪除所有成長紀錄嗎？')) {
-                localStorage.removeItem('plantHistory');
-                location.reload();
-            }
+        function closeDay() {
+            alert('晚安！明天也會繼續紀錄小夥伴的成長 ✨');
+            document.getElementById('bedtime-box').style.opacity = '0.5';
+            document.getElementById('bedtime-msg').innerText = '小夥伴正在休息中...💤';
         }
     </script>
 </body>
