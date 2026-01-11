@@ -3,26 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>小森夥伴 | 植物寵物監測</title>
+    <title>小森夥伴 | 植物寵物監測系統</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
-        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f4f7f4; }
+        body { font-family: 'Noto Sans TC', sans-serif; transition: background-color 0.5s; background-color: #f4f7f4; }
         .alert-flash { animation: flash 1s infinite; }
         @keyframes flash { 0%, 100% { background-color: #ef4444; } 50% { background-color: #b91c1c; } }
         .status-pill { padding: 4px 12px; border-radius: 9999px; font-size: 10px; font-weight: bold; transition: all 0.3s; }
         .status-online { background-color: #dcfce7; color: #166534; border: 1px solid #86efac; }
         .status-offline { background-color: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+        .bedtime-waiting { background-color: #e2e8f0; color: #64748b; border: 2px dashed #cbd5e1; }
+        .bedtime-active { background-color: #1e293b; color: white; border: 2px solid #334155; transform: scale(1.02); }
+        .night-mode { background-color: #0f172a; }
+        #config-content { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-out, opacity 0.3s; opacity: 0; }
+        #config-content.is-expanded { max-height: 200px; opacity: 1; }
     </style>
 </head>
-<body class="pb-20">
+<body class="pb-24">
 
     <div id="alert-bar" class="hidden alert-flash text-white text-center py-2 text-xs font-bold sticky top-0 z-[60]">
         ⚠️ 警報：環境數據異常，請確認植物狀況！
     </div>
 
-    <nav class="bg-white p-4 shadow-sm sticky top-0 z-50">
+    <nav class="bg-white p-4 shadow-sm sticky top-0 z-50 text-black">
         <div class="max-w-md mx-auto flex justify-between items-center">
             <h1 class="text-xl font-bold text-green-600">🌿 小森夥伴</h1>
             <div id="conn-pill" class="status-pill status-online"><span id="conn-text">連線正常</span></div>
@@ -31,37 +36,60 @@
 
     <main class="max-w-md mx-auto p-4 space-y-4">
         
-        <section class="bg-white rounded-3xl p-8 shadow-sm text-center border border-gray-100">
+        <section class="bg-white rounded-3xl shadow-sm border overflow-hidden text-black">
+            <button onclick="toggleConfig()" class="w-full px-5 py-4 flex justify-between items-center bg-white active:bg-gray-50 transition">
+                <span class="text-xs font-bold text-gray-500 uppercase tracking-widest">🌙 互動時間設定</span>
+                <span id="config-arrow" class="text-gray-400 text-xs transition-transform duration-300">▼</span>
+            </button>
+            <div id="config-content">
+                <div class="px-5 pb-5 border-t border-gray-50 pt-4">
+                    <div class="flex items-center space-x-3">
+                        <input type="time" id="sleep-time-input" class="border-2 border-gray-100 rounded-xl px-3 py-2 text-sm flex-1 outline-none focus:border-green-500">
+                        <button id="save-btn" onclick="saveSleepTime()" class="bg-green-500 text-white px-6 py-2 rounded-xl text-sm font-bold shadow-md active:scale-95">確定儲存</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="bg-white rounded-3xl p-8 shadow-sm text-center border border-gray-100 text-black">
             <div id="plant-avatar" class="text-9xl mb-4 transition-transform duration-500">🌵</div>
-            <h2 class="text-2xl font-bold text-gray-800">小仙仙</h2>
+            <h2 class="text-2xl font-bold">小仙仙</h2>
             <div id="status-tag" class="mt-2 inline-block px-4 py-1 rounded-full text-xs font-medium bg-green-100 text-green-600">狀態：舒適</div>
         </section>
 
-        <section class="grid grid-cols-3 gap-3">
-            <div class="bg-white p-4 rounded-2xl shadow-sm text-center border"><span class="text-gray-400 text-[10px] block mb-1">溫度</span><span id="v-temp" class="text-lg font-bold">25°C</span></div>
-            <div class="bg-white p-4 rounded-2xl shadow-sm text-center border"><span class="text-gray-400 text-[10px] block mb-1">濕度</span><span id="v-humi" class="text-lg font-bold">60%</span></div>
-            <div class="bg-white p-4 rounded-2xl shadow-sm text-center border"><span class="text-gray-400 text-[10px] block mb-1">日照</span><span id="v-light" class="text-lg font-bold">80%</span></div>
+        <section class="grid grid-cols-3 gap-3 text-black">
+            <div class="bg-white p-4 rounded-2xl shadow-sm text-center border"><span class="text-gray-400 text-[10px] block mb-1">溫度</span><span id="v-temp" class="text-lg font-bold">--°C</span></div>
+            <div class="bg-white p-4 rounded-2xl shadow-sm text-center border"><span class="text-gray-400 text-[10px] block mb-1">濕度</span><span id="v-humi" class="text-lg font-bold">--%</span></div>
+            <div class="bg-white p-4 rounded-2xl shadow-sm text-center border"><span class="text-gray-400 text-[10px] block mb-1">日照</span><span id="v-light" class="text-lg font-bold">--%</span></div>
         </section>
 
-        <section class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-            <h3 class="font-bold text-gray-700 mb-4 text-xs">24 小時數據紀錄</h3>
-            <canvas id="historyChart" height="180"></canvas>
+        <section class="bg-white rounded-3xl p-6 shadow-sm border text-black">
+            <h3 class="font-bold text-gray-700 mb-4 text-[10px]">24 小時數據紀錄</h3>
+            <canvas id="historyChart" height="150"></canvas>
         </section>
 
-        <section id="bedtime-section" class="bg-slate-900 text-white rounded-3xl p-6 shadow-xl hidden">
-            <h3 class="text-lg font-bold mb-2">🌙 晚安對話</h3>
-            <p id="bedtime-text" class="text-slate-300 text-sm leading-relaxed mb-4"></p>
-            <button onclick="closeDay()" class="w-full bg-slate-700 py-2 rounded-xl text-xs hover:bg-slate-600 transition">完成今日飼養</button>
+        <section id="bedtime-section" class="bedtime-waiting rounded-3xl p-6 shadow-md transition-all duration-700">
+            <div id="bedtime-waiting-ui">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm font-bold">🌙 睡前互動預備中</h3>
+                    <span id="next-trigger" class="text-[10px] font-bold text-green-600 bg-white px-2 py-0.5 rounded-full">未設定</span>
+                </div>
+                <button onclick="activateBedtime()" class="w-full bg-white/50 border border-gray-300 py-2 rounded-xl text-[10px] font-bold hover:bg-white transition text-black">☕ 提早與植物對話</button>
+            </div>
+            <div id="bedtime-active-ui" class="hidden">
+                <h3 class="text-lg font-bold mb-2 text-white">👋 晚安，主人！</h3>
+                <p id="bedtime-text" class="text-sm leading-relaxed mb-4 text-slate-300"></p>
+                <button onclick="closeDay()" class="w-full bg-indigo-500 text-white py-3 rounded-xl text-xs font-bold shadow-lg">辛苦了，關燈休息</button>
+            </div>
         </section>
 
-        <div class="bg-gray-800 rounded-2xl p-4 mt-8 text-white">
-            <p class="text-[10px] font-bold text-gray-400 mb-3 tracking-widest uppercase">Backend Simulator</p>
-            <div class="grid grid-cols-2 gap-2">
-                <button onclick="pushData(36, 20, 90)" class="bg-red-600 text-[10px] py-2 rounded font-bold">模擬感測器：偵測異常</button>
-                <button onclick="pushData(24, 65, 75)" class="bg-green-600 text-[10px] py-2 rounded font-bold">模擬感測器：恢復正常</button>
-                <button onclick="setConnection(false)" class="bg-gray-600 text-[10px] py-2 rounded font-bold">模擬感測器：斷線</button>
-                <button onclick="setConnection(true)" class="bg-blue-600 text-[10px] py-2 rounded font-bold">模擬感測器：連線</button>
-                <button onclick="showBedtime()" class="col-span-2 bg-slate-100 text-slate-900 text-[10px] py-2 rounded font-bold">查看睡前互動 (基於歷史數據)</button>
+        <div class="bg-gray-800 rounded-2xl p-4 mt-8 text-white space-y-3">
+            <p class="text-[10px] font-bold text-gray-400 mb-1 uppercase">Engineer Tools</p>
+            <div class="grid grid-cols-2 gap-2 text-white">
+                <button onclick="pushData(35, 20, 90)" class="bg-red-600 text-[10px] py-2 rounded">偵測異常</button>
+                <button onclick="pushData(24, 60, 80)" class="bg-green-600 text-[10px] py-2 rounded">偵測恢復</button>
+                <button onclick="setConnection(false)" class="bg-gray-600 text-[10px] py-2 rounded">模擬斷線</button>
+                <button onclick="setConnection(true)" class="bg-blue-600 text-[10px] py-2 rounded">模擬連線</button>
             </div>
         </div>
     </main>
@@ -69,30 +97,46 @@
     <script>
         let myChart;
         let history = JSON.parse(localStorage.getItem('plantData')) || [];
+        let sleepTime = localStorage.getItem('sleepTime') || "";
 
         window.onload = function() {
+            if(sleepTime) {
+                document.getElementById('sleep-time-input').value = sleepTime;
+                document.getElementById('next-trigger').innerText = "將於 " + sleepTime + " 開啟";
+            }
             initChart();
             renderUI();
+            setInterval(checkTime, 5000);
         };
+
+        function toggleConfig() {
+            const content = document.getElementById('config-content');
+            const arrow = document.getElementById('config-arrow');
+            content.classList.toggle('is-expanded');
+            arrow.style.transform = content.classList.contains('is-expanded') ? "rotate(180deg)" : "rotate(0deg)";
+        }
+
+        function saveSleepTime() {
+            const val = document.getElementById('sleep-time-input').value;
+            if(!val) return;
+            sleepTime = val;
+            localStorage.setItem('sleepTime', val);
+            document.getElementById('next-trigger').innerText = "將於 " + val + " 開啟";
+            const btn = document.getElementById('save-btn');
+            btn.innerText = "已儲存 ✓";
+            btn.classList.add('bg-green-800');
+            setTimeout(() => { 
+                btn.innerText = "確定儲存"; 
+                btn.classList.remove('bg-green-800');
+                toggleConfig(); 
+            }, 1000);
+        }
 
         function setConnection(isOnline) {
             const pill = document.getElementById('conn-pill');
             const text = document.getElementById('conn-text');
             pill.className = isOnline ? "status-pill status-online" : "status-pill status-offline";
             text.innerText = isOnline ? "連線正常" : "連線異常";
-        }
-
-        function initChart() {
-            const ctx = document.getElementById('historyChart').getContext('2d');
-            myChart = new Chart(ctx, {
-                type: 'line',
-                data: { labels: [], datasets: [
-                    { label: '濕度', borderColor: '#3b82f6', data: [], tension: 0.4 },
-                    { label: '溫度', borderColor: '#f97316', data: [], tension: 0.4 }
-                ]},
-                options: { responsive: true, plugins: { legend: { display: false } } }
-            });
-            updateChart();
         }
 
         function pushData(temp, humi, light) {
@@ -117,7 +161,7 @@
             if(last.humi < 30 || last.temp > 32) {
                 alertBar.classList.remove('hidden');
                 avatar.innerText = last.humi < 30 ? "🥀" : "🥵";
-                tag.innerText = "狀態：環境極差";
+                tag.innerText = "狀態：環境惡劣";
                 tag.className = "mt-2 inline-block px-4 py-1 rounded-full text-xs font-medium bg-red-100 text-red-600";
             } else {
                 alertBar.classList.add('hidden');
@@ -128,24 +172,49 @@
             updateChart();
         }
 
+        function checkTime() {
+            if(!sleepTime) return;
+            const now = new Date();
+            const cur = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+            if (cur === sleepTime) activateBedtime();
+        }
+
+        function activateBedtime() {
+            document.body.classList.add('night-mode');
+            document.getElementById('bedtime-section').className = "bedtime-active rounded-3xl p-6 shadow-2xl transition-all";
+            document.getElementById('bedtime-waiting-ui').classList.add('hidden');
+            document.getElementById('bedtime-active-ui').classList.remove('hidden');
+            const hadCrisis = history.some(d => d.humi < 30 || d.temp > 32);
+            document.getElementById('bedtime-text').innerText = hadCrisis ? 
+                "主人，今天我不舒服的時候謝謝你照顧我。現在數據恢復正常了，晚安！" : 
+                "今天是很平穩的一天，數據都維持得很棒。辛苦照顧我了，晚安。";
+        }
+
+        function closeDay() {
+            document.body.classList.remove('night-mode');
+            document.getElementById('bedtime-section').className = "bedtime-waiting rounded-3xl p-6 shadow-md transition-all";
+            document.getElementById('bedtime-waiting-ui').classList.remove('hidden');
+            document.getElementById('bedtime-active-ui').classList.add('hidden');
+        }
+
+        function initChart() {
+            const ctx = document.getElementById('historyChart').getContext('2d');
+            myChart = new Chart(ctx, {
+                type: 'line',
+                data: { labels: [], datasets: [
+                    { label: '濕度', borderColor: '#3b82f6', data: [], tension: 0.4 },
+                    { label: '溫度', borderColor: '#f97316', data: [], tension: 0.4 }
+                ]},
+                options: { responsive: true, plugins: { legend: { display: false } } }
+            });
+            updateChart();
+        }
         function updateChart() {
             myChart.data.labels = history.map(d => d.time);
             myChart.data.datasets[0].data = history.map(d => d.humi);
             myChart.data.datasets[1].data = history.map(d => d.temp);
             myChart.update();
         }
-
-        function showBedtime() {
-            const section = document.getElementById('bedtime-section');
-            const text = document.getElementById('bedtime-text');
-            section.classList.remove('hidden');
-            const hadCrisis = history.some(d => d.humi < 30 || d.temp > 32);
-            text.innerText = hadCrisis ? 
-                "主人，今天感測器紀錄到我曾經很不舒服，還好後來環境變好了，謝謝你的照顧！" : 
-                "今天是很平穩的一天，數據都維持得很棒。謝謝主人照顧，晚安。";
-        }
-
-        function closeDay() { document.getElementById('bedtime-section').classList.add('hidden'); }
     </script>
 </body>
 </html>
